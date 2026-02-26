@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🌙 Appel Ramadan</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&family=Playfair+Display:wght@700&display=swap');
+
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d2e;
+    --card: #222538;
+    --gold: #d4a843;
+    --gold-light: #f0c96e;
+    --green: #2ecc8a;
+    --text: #e8e4d8;
+    --muted: #7a7891;
+    --border: #2e3150;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Tajawal', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+
+  /* Starry background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse at 20% 10%, rgba(212,168,67,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(46,76,138,0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { position: relative; z-index: 1; max-width: 600px; margin: 0 auto; padding: 0 16px; }
+
+  header {
+    text-align: center;
+    padding: 32px 16px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+
+  .moon-icon { font-size: 2.5rem; margin-bottom: 8px; animation: glow 3s ease-in-out infinite; }
+
+  @keyframes glow {
+    0%, 100% { filter: drop-shadow(0 0 8px rgba(212,168,67,0.3)); }
+    50% { filter: drop-shadow(0 0 20px rgba(212,168,67,0.7)); }
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    color: var(--gold-light);
+    letter-spacing: 0.02em;
+  }
+
+  .subtitle { color: var(--muted); font-size: 0.9rem; margin-top: 4px; }
+
+  /* Date */
+  .date-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    font-size: 0.95rem;
+  }
+  .date-bar span { color: var(--gold); font-weight: 500; }
+
+  /* Import zone */
+  .upload-zone {
+    background: var(--surface);
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    padding: 28px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    margin-bottom: 24px;
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--gold);
+    background: rgba(212,168,67,0.05);
+  }
+  .upload-zone .icon { font-size: 2.2rem; margin-bottom: 8px; }
+  .upload-zone p { color: var(--muted); font-size: 0.9rem; }
+  .upload-zone strong { color: var(--text); display: block; margin-bottom: 4px; }
+  #fileInput { display: none; }
+
+  .btn-upload {
+    display: inline-block;
+    margin-top: 12px;
+    background: linear-gradient(135deg, var(--gold), #b8862e);
+    color: #0f1117;
+    font-weight: 700;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 0.95rem;
+    padding: 10px 24px;
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.15s, opacity 0.15s;
+  }
+  .btn-upload:hover { transform: scale(1.03); opacity: 0.9; }
+
+  /* Stats bar */
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+  }
+  .stat-num { font-size: 1.6rem; font-weight: 700; }
+  .stat-num.total { color: var(--gold); }
+  .stat-num.present { color: var(--green); }
+  .stat-num.absent { color: #e07070; }
+  .stat-label { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+
+  /* Search */
+  .search-bar {
+    position: relative;
+    margin-bottom: 16px;
+  }
+  .search-bar input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px 12px 44px;
+    color: var(--text);
+    font-family: 'Tajawal', sans-serif;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-bar input:focus { border-color: var(--gold); }
+  .search-bar input::placeholder { color: var(--muted); }
+  .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.1rem;
+    color: var(--muted);
+  }
+
+  /* Filter buttons */
+  .filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .filter-btn {
+    flex: 1;
+    padding: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-family: 'Tajawal', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .filter-btn.active {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: rgba(212,168,67,0.08);
+  }
+
+  /* Student list */
+  .student-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .student-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .student-item:active { transform: scale(0.98); }
+  .student-item.checked {
+    background: rgba(46,204,138,0.07);
+    border-color: rgba(46,204,138,0.3);
+  }
+
+  .check-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+  }
+  .student-item.checked .check-circle {
+    background: var(--green);
+    border-color: var(--green);
+  }
+
+  .student-info { flex: 1; min-width: 0; }
+  .student-name {
+    font-size: 1rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .student-item.checked .student-name { color: var(--green); }
+  .student-num { font-size: 0.78rem; color: var(--muted); }
+
+  .badge-heure {
+    font-size: 0.75rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .student-item.checked .badge-heure { color: rgba(46,204,138,0.7); }
+
+  /* Bottom bar */
+  .bottom-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    gap: 10px;
+    z-index: 100;
+  }
+
+  .btn-action {
+    flex: 1;
+    padding: 11px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    font-family: 'Tajawal', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-action:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-action.primary {
+    background: linear-gradient(135deg, var(--gold), #b8862e);
+    color: #0f1117;
+    font-weight: 700;
+    border: none;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--muted);
+  }
+  .empty-state .big { font-size: 3rem; margin-bottom: 12px; }
+
+  /* Loading */
+  .loading {
+    text-align: center;
+    padding: 32px;
+    color: var(--gold);
+    font-size: 0.95rem;
+  }
+  .spinner {
+    display: inline-block;
+    width: 32px; height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-80px);
+    background: var(--green);
+    color: #0f1117;
+    font-weight: 700;
+    padding: 10px 20px;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    z-index: 999;
+    transition: transform 0.3s ease;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<div class="container">
+  <header>
+    <div class="moon-icon">🌙</div>
+    <h1>Appel Ramadan</h1>
+    <p class="subtitle">Distribution des repas</p>
+  </header>
+
+  <div class="date-bar">
+    📅 <span id="dateDisplay"></span>
+  </div>
+
+  <div class="upload-zone" id="uploadZone">
+    <div class="icon">📄</div>
+    <strong>Importer la liste PDF</strong>
+    <p>Glissez-déposez votre fichier ici</p>
+    <button class="btn-upload" onclick="document.getElementById('fileInput').click()">Choisir un fichier PDF</button>
+    <input type="file" id="fileInput" accept=".pdf">
+  </div>
+
+  <div id="mainContent" style="display:none">
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-num total" id="statTotal">0</div>
+        <div class="stat-label">Total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num present" id="statPresent">0</div>
+        <div class="stat-label">Présents</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num absent" id="statAbsent">0</div>
+        <div class="stat-label">Restants</div>
+      </div>
+    </div>
+
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Rechercher un étudiant..." oninput="renderList()">
+    </div>
+
+    <div class="filters">
+      <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">Tous</button>
+      <button class="filter-btn" data-filter="absent" onclick="setFilter('absent', this)">Restants</button>
+      <button class="filter-btn" data-filter="present" onclick="setFilter('present', this)">Présents</button>
+    </div>
+
+    <div class="student-list" id="studentList"></div>
+  </div>
+
+  <div id="loadingState" style="display:none" class="loading">
+    <div class="spinner"></div><br>
+    Extraction en cours...
+  </div>
+</div>
+
+<div class="bottom-bar" id="bottomBar" style="display:none">
+  <button class="btn-action" onclick="resetAll()">🔄 Réinitialiser</button>
+  <button class="btn-action" onclick="sendEmail()">📧 Envoyer</button>
+  <button class="btn-action primary" onclick="document.getElementById('fileInput').click()">📄 Nouveau PDF</button>
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+let students = [];
+let currentFilter = 'all';
+
+// Date display
+const now = new Date();
+document.getElementById('dateDisplay').textContent = now.toLocaleDateString('fr-FR', {
+  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+});
+
+// Drag & drop
+const uploadZone = document.getElementById('uploadZone');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type === 'application/pdf') processPDF(file);
+});
+
+document.getElementById('fileInput').addEventListener('change', e => {
+  if (e.target.files[0]) processPDF(e.target.files[0]);
+});
+
+async function processPDF(file) {
+  document.getElementById('uploadZone').style.display = 'none';
+  document.getElementById('loadingState').style.display = 'block';
+  document.getElementById('mainContent').style.display = 'none';
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const pageText = content.items.map(item => item.str).join(' ');
+      fullText += pageText + '\n';
+    }
+
+    const names = extractNames(fullText);
+
+    if (names.length === 0) {
+      alert("Aucun nom trouvé. Vérifiez que le PDF contient bien une colonne Nom/Prénom.");
+      document.getElementById('uploadZone').style.display = 'block';
+      document.getElementById('loadingState').style.display = 'none';
+      return;
+    }
+
+    students = names.map((name, i) => ({ id: i, name, checked: false, time: null }));
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+    document.getElementById('bottomBar').style.display = 'flex';
+    renderList();
+    updateStats();
+    showToast(`✅ ${students.length} étudiants chargés`);
+  } catch (err) {
+    console.error(err);
+    alert("Erreur lors de la lecture du PDF.");
+    document.getElementById('uploadZone').style.display = 'block';
+    document.getElementById('loadingState').style.display = 'none';
+  }
+}
+
+function extractNames(text) {
+  const names = [];
+  const seen = new Set();
+
+  // ── Strategy 1: Table format "date … Name … phone … email" ──
+  // Pre-process: fix letters glued to digits (e.g. "MORTA0663890760" → "MORTA 0663890760")
+  text = text.replace(/([A-Za-zÀ-ÿ])(\d{4,})/g, '$1 $2');
+
+  const tableRow = /(?:(?:janv|févr|mars|avr|mai|juin|juil|août|sept|oct|nov|déc)\w*\.?\s+\d{1,2},?\s+\d{4}\s+)?([A-ZÀÂÄÉÈÊËÎÏÔÙÛÜÇŒA-Za-zàâäéèêëîïôùûüçœ'-]+(?:\s+[A-ZÀÂÄÉÈÊËÎÏÔÙÛÜÇŒA-Za-zàâäéèêëîïôùûüçœ'-]+){1,4})\s+(?:\+?\d[\d\s]{6,}|0\d[\d\s]{8,})/g;
+
+  let m;
+  while ((m = tableRow.exec(text)) !== null) {
+    const candidate = m[1].trim();
+    // Exclude header words
+    if (/^(nom|prénom|prenom|submission|date|numéro|adresse|téléphone|email|phone)$/i.test(candidate)) continue;
+    if (candidate.split(/\s+/).length < 2) continue;
+    const key = candidate.toLowerCase();
+    if (!seen.has(key)) { seen.add(key); names.push(formatName(candidate)); }
+  }
+
+  // ── Strategy 2: Lines with email → extract name before phone/email ──
+  if (names.length === 0) {
+    const emailRow = /([A-ZÀÂÄÉÈÊËÎÏÔÙÛÜÇŒA-Za-zàâäéèêëîïôùûüçœ'-]+(?:\s+[A-ZÀÂÄÉÈÊËÎÏÔÙÛÜÇŒA-Za-zàâäéèêëîïôùûüçœ'-]+){1,4})\s+[\w.+-]+@[\w.-]+/g;
+    while ((m = emailRow.exec(text)) !== null) {
+      const candidate = m[1].trim();
+      if (/^(nom|prénom|submission|date)$/i.test(candidate)) continue;
+      if (candidate.split(/\s+/).length < 2) continue;
+      const key = candidate.toLowerCase();
+      if (!seen.has(key)) { seen.add(key); names.push(formatName(candidate)); }
+    }
+  }
+
+  // ── Strategy 3: Generic — lines with 2-4 word proper names ──
+  if (names.length === 0) {
+    const lines = text.split(/\n|\r/).map(l => l.trim()).filter(Boolean);
+    const nameOnly = /^[A-ZÀÂÄÉÈÊËÎÏÔÙÛÜÇŒ][A-ZÀÂÄÉÈÊËÎÏÔÙÛÜÇŒa-zàâäéèêëîïôùûüçœ'-]+(?:\s+[A-ZÀÂÄÉÈÊËÎÏÔÙÛÜÇŒA-zàâäéèêëîïôùûüçœ'-]+){1,4}$/;
+    for (const line of lines) {
+      if (nameOnly.test(line)) {
+        const key = line.toLowerCase();
+        if (!seen.has(key)) { seen.add(key); names.push(formatName(line)); }
+      }
+    }
+  }
+
+  return names.sort();
+}
+
+function formatName(str) {
+  return str.split(/\s+/).map(w => {
+    if (!w) return '';
+    return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+  }).join(' ');
+}
+
+function toggle(id) {
+  const s = students.find(s => s.id === id);
+  if (!s) return;
+  s.checked = !s.checked;
+  s.time = s.checked ? new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : null;
+  renderList();
+  updateStats();
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+}
+
+function renderList() {
+  const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  const list = document.getElementById('studentList');
+
+  let filtered = students.filter(s => {
+    const matchSearch = s.name.toLowerCase().includes(q);
+    const matchFilter = currentFilter === 'all' || (currentFilter === 'present' && s.checked) || (currentFilter === 'absent' && !s.checked);
+    return matchSearch && matchFilter;
+  });
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="big">🔍</div><p>Aucun étudiant trouvé</p></div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map((s, i) => `
+    <div class="student-item ${s.checked ? 'checked' : ''}" onclick="toggle(${s.id})">
+      <div class="check-circle">${s.checked ? '✓' : ''}</div>
+      <div class="student-info">
+        <div class="student-name">${s.name}</div>
+        <div class="student-num">Étudiant n°${s.id + 1}</div>
+      </div>
+      ${s.time ? `<div class="badge-heure">✓ ${s.time}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function updateStats() {
+  const total = students.length;
+  const present = students.filter(s => s.checked).length;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statPresent').textContent = present;
+  document.getElementById('statAbsent').textContent = total - present;
+}
+
+function resetAll() {
+  if (!confirm('Réinitialiser tous les pointages ?')) return;
+  students.forEach(s => { s.checked = false; s.time = null; });
+  renderList();
+  updateStats();
+  showToast('🔄 Réinitialisé');
+}
+
+function exportSummary() {
+  const present = students.filter(s => s.checked);
+  const absent = students.filter(s => !s.checked);
+  const date = document.getElementById('dateDisplay').textContent;
+
+  let text = `📋 APPEL RAMADAN — ${date}\n`;
+  text += `Total: ${students.length} | Présents: ${present.length} | Restants: ${absent.length}\n\n`;
+  text += `✅ PRÉSENTS (${present.length}):\n`;
+  present.forEach(s => { text += `  • ${s.name} (${s.time})\n`; });
+  text += `\n❌ ABSENTS (${absent.length}):\n`;
+  absent.forEach(s => { text += `  • ${s.name}\n`; });
+
+  if (navigator.share) {
+    navigator.share({ title: 'Appel Ramadan', text });
+  } else {
+    const el = document.createElement('textarea');
+    el.value = text;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    showToast('📋 Résumé copié !');
+  }
+}
+
+function sendEmail() {
+  const present = students.filter(s => s.checked);
+  const absent = students.filter(s => !s.checked);
+  const date = document.getElementById('dateDisplay').textContent;
+
+  const subject = encodeURIComponent(`Appel Ramadan – ${date}`);
+
+  let body = `Bonjour,\n\nVoici le récapitulatif de la distribution des repas du ${date}.\n\n`;
+  body += `📊 BILAN\n`;
+  body += `• Total inscrits : ${students.length}\n`;
+  body += `• Repas distribués : ${present.length}\n`;
+  body += `• Absents : ${absent.length}\n\n`;
+
+  if (absent.length > 0) {
+    body += `❌ ÉTUDIANTS ABSENTS (${absent.length}) :\n`;
+    absent.forEach((s, i) => { body += `  ${i + 1}. ${s.name}\n`; });
+    body += '\n';
+  }
+
+  if (present.length > 0) {
+    body += `✅ ÉTUDIANTS PRÉSENTS (${present.length}) :\n`;
+    present.forEach((s, i) => { body += `  ${i + 1}. ${s.name} – ${s.time}\n`; });
+  }
+
+  body += `\nCordialement.`;
+
+  const mailto = `mailto:sarytaxi@gmail.com?subject=${subject}&body=${encodeURIComponent(body)}`;
+  const a = document.createElement('a');
+  a.href = mailto;
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
